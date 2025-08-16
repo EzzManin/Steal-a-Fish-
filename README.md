@@ -24,7 +24,7 @@ openBtn.Draggable = true
 
 -- Menu
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 120)
+frame.Size = UDim2.new(0, 200, 0, 160)
 frame.Position = UDim2.new(0.3, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.Active = true
@@ -55,9 +55,18 @@ toggleBtn.Text = "Roubar: OFF"
 toggleBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
 
+-- Toggle Noclip
+local noclipBtn = Instance.new("TextButton", frame)
+noclipBtn.Size = UDim2.new(1, -10, 0, 30)
+noclipBtn.Position = UDim2.new(0, 5, 0, 120)
+noclipBtn.Text = "Noclip: OFF"
+noclipBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+noclipBtn.TextColor3 = Color3.new(1, 1, 1)
+
 -- Estado
 local savedCFrame = nil
 local roubarOn = false
+local noclipOn = false
 local noclipConn
 
 -- Abrir/fechar menu
@@ -77,16 +86,18 @@ end)
 
 -- Função noclip
 local function enableNoclip()
-    noclipConn = RunService.Stepped:Connect(function()
-        local char = player.Character
-        if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+    if not noclipConn then
+        noclipConn = RunService.Stepped:Connect(function()
+            local char = player.Character
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
                 end
             end
-        end
-    end)
+        end)
+    end
 end
 
 local function disableNoclip()
@@ -95,6 +106,17 @@ local function disableNoclip()
         noclipConn = nil
     end
 end
+
+-- Toggle Noclip manual
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipOn = not noclipOn
+    noclipBtn.Text = "Noclip: " .. (noclipOn and "ON" or "OFF")
+    if noclipOn then
+        enableNoclip()
+    else
+        disableNoclip()
+    end
+end)
 
 -- Toggle Roubar
 toggleBtn.MouseButton1Click:Connect(function()
@@ -120,15 +142,19 @@ toggleBtn.MouseButton1Click:Connect(function()
                 local targetPos = savedCFrame.Position + Vector3.new(0, 5, 0)
                 local dir = (targetPos - hrp.Position)
                 if dir.Magnitude < 4 then break end
-                bv.Velocity = dir.Unit * 50 -- velocidade mais lenta
+                bv.Velocity = dir.Unit * 50
                 task.wait()
             end
             bv:Destroy()
-            disableNoclip()
+            if not noclipOn then
+                disableNoclip()
+            end
             roubarOn = false
             toggleBtn.Text = "Roubar: OFF"
         end)
     else
-        disableNoclip()
+        if not noclipOn then
+            disableNoclip()
+        end
     end
 end)
