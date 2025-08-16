@@ -1,4 +1,4 @@
--- LocalScript - EzzHub Roubar (Steal A Fish) com Noclip
+-- LocalScript - EzzHub Roubar (Steal A Fish) com Noclip e Interação Instantânea
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
@@ -24,7 +24,7 @@ openBtn.Draggable = true
 
 -- Menu
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 160)
+frame.Size = UDim2.new(0, 200, 0, 200)
 frame.Position = UDim2.new(0.3, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.Active = true
@@ -63,11 +63,21 @@ noclipBtn.Text = "Noclip: OFF"
 noclipBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 noclipBtn.TextColor3 = Color3.new(1, 1, 1)
 
+-- Toggle Interação Instantânea
+local instantBtn = Instance.new("TextButton", frame)
+instantBtn.Size = UDim2.new(1, -10, 0, 30)
+instantBtn.Position = UDim2.new(0, 5, 0, 160)
+instantBtn.Text = "Interassao Instantânea: OFF"
+instantBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+instantBtn.TextColor3 = Color3.new(1, 1, 1)
+
 -- Estado
 local savedCFrame = nil
 local roubarOn = false
 local noclipOn = false
+local instantOn = false
 local noclipConn
+local instantConn
 
 -- Abrir/fechar menu
 openBtn.MouseButton1Click:Connect(function()
@@ -107,6 +117,30 @@ local function disableNoclip()
     end
 end
 
+-- Função interação instantânea
+local function enableInstant()
+    if not instantConn then
+        instantConn = game.DescendantAdded:Connect(function(obj)
+            if obj:IsA("ProximityPrompt") then
+                obj.HoldDuration = 0 -- sem delay
+            end
+        end)
+        -- também aplicar aos já existentes
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                obj.HoldDuration = 0
+            end
+        end
+    end
+end
+
+local function disableInstant()
+    if instantConn then
+        instantConn:Disconnect()
+        instantConn = nil
+    end
+end
+
 -- Toggle Noclip manual
 noclipBtn.MouseButton1Click:Connect(function()
     noclipOn = not noclipOn
@@ -115,6 +149,17 @@ noclipBtn.MouseButton1Click:Connect(function()
         enableNoclip()
     else
         disableNoclip()
+    end
+end)
+
+-- Toggle Interação Instantânea
+instantBtn.MouseButton1Click:Connect(function()
+    instantOn = not instantOn
+    instantBtn.Text = "Interassao Instantânea: " .. (instantOn and "ON" or "OFF")
+    if instantOn then
+        enableInstant()
+    else
+        disableInstant()
     end
 end)
 
