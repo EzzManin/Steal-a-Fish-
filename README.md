@@ -1,15 +1,13 @@
--- LocalScript - EzzHub Roubar (Steal A Fish) com Noclip e Interação Instantânea
+-- LocalScript - EzzHub Roubar (Steal A Fish) com Botão de Interação Instantânea e Cópia de Link
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
--- Função para pegar HumanoidRootPart
 local function getHRP()
     local char = player.Character or player.CharacterAdded:Wait()
     return char:WaitForChild("HumanoidRootPart")
 end
 
--- GUI
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
@@ -24,7 +22,7 @@ openBtn.Draggable = true
 
 -- Menu
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 200)
+frame.Size = UDim2.new(0, 200, 0, 240)
 frame.Position = UDim2.new(0.3, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.Active = true
@@ -63,21 +61,27 @@ noclipBtn.Text = "Noclip: OFF"
 noclipBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 noclipBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- Toggle Interação Instantânea
+-- Botão Interação Instantânea (agora botão único)
 local instantBtn = Instance.new("TextButton", frame)
 instantBtn.Size = UDim2.new(1, -10, 0, 30)
 instantBtn.Position = UDim2.new(0, 5, 0, 160)
-instantBtn.Text = "Interassao Instantânea: OFF"
+instantBtn.Text = "Ativar Interação Instantânea"
 instantBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 instantBtn.TextColor3 = Color3.new(1, 1, 1)
+
+-- Botão Copiar Link
+local copyLinkBtn = Instance.new("TextButton", frame)
+copyLinkBtn.Size = UDim2.new(1, -10, 0, 30)
+copyLinkBtn.Position = UDim2.new(0, 5, 0, 200)
+copyLinkBtn.Text = "Copiar Link Discord"
+copyLinkBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+copyLinkBtn.TextColor3 = Color3.new(1, 1, 1)
 
 -- Estado
 local savedCFrame = nil
 local roubarOn = false
 local noclipOn = false
-local instantOn = false
 local noclipConn
-local instantConn
 
 -- Abrir/fechar menu
 openBtn.MouseButton1Click:Connect(function()
@@ -94,7 +98,7 @@ saveBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Função noclip
+-- Noclip
 local function enableNoclip()
     if not noclipConn then
         noclipConn = RunService.Stepped:Connect(function()
@@ -109,7 +113,6 @@ local function enableNoclip()
         end)
     end
 end
-
 local function disableNoclip()
     if noclipConn then
         noclipConn:Disconnect()
@@ -117,50 +120,42 @@ local function disableNoclip()
     end
 end
 
--- Função interação instantânea
-local function enableInstant()
-    if not instantConn then
-        instantConn = game.DescendantAdded:Connect(function(obj)
-            if obj:IsA("ProximityPrompt") then
-                obj.HoldDuration = 0 -- sem delay
-            end
-        end)
-        -- também aplicar aos já existentes
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") then
-                obj.HoldDuration = 0
-            end
+-- Interação instantânea (apenas quando clica)
+instantBtn.MouseButton1Click:Connect(function()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") then
+            obj.HoldDuration = 0
         end
     end
-end
+    game.DescendantAdded:Connect(function(obj)
+        if obj:IsA("ProximityPrompt") then
+            obj.HoldDuration = 0
+        end
+    end)
+    instantBtn.Text = "Interação Instantânea Ativada!"
+    task.delay(1, function()
+        instantBtn.Text = "Ativar Interação Instantânea"
+    end)
+end)
 
-local function disableInstant()
-    if instantConn then
-        instantConn:Disconnect()
-        instantConn = nil
+-- Copiar link para área de transferência
+copyLinkBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard("https://discord.gg/wMmUrsNXBJ")
+    elseif Clipboard then
+        Clipboard.set("https://discord.gg/wMmUrsNXBJ")
     end
-end
+    copyLinkBtn.Text = "Link Copiado!"
+    task.delay(1, function()
+        copyLinkBtn.Text = "Copiar Link Discord"
+    end)
+end)
 
--- Toggle Noclip manual
+-- Toggle Noclip
 noclipBtn.MouseButton1Click:Connect(function()
     noclipOn = not noclipOn
     noclipBtn.Text = "Noclip: " .. (noclipOn and "ON" or "OFF")
-    if noclipOn then
-        enableNoclip()
-    else
-        disableNoclip()
-    end
-end)
-
--- Toggle Interação Instantânea
-instantBtn.MouseButton1Click:Connect(function()
-    instantOn = not instantOn
-    instantBtn.Text = "Interassao Instantânea: " .. (instantOn and "ON" or "OFF")
-    if instantOn then
-        enableInstant()
-    else
-        disableInstant()
-    end
+    if noclipOn then enableNoclip() else disableNoclip() end
 end)
 
 -- Toggle Roubar
@@ -172,10 +167,8 @@ toggleBtn.MouseButton1Click:Connect(function()
         end)
         return
     end
-
     roubarOn = not roubarOn
     toggleBtn.Text = "Roubar: " .. (roubarOn and "ON" or "OFF")
-
     if roubarOn then
         enableNoclip()
         task.spawn(function()
@@ -184,22 +177,17 @@ toggleBtn.MouseButton1Click:Connect(function()
             bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
             bv.Parent = hrp
             while roubarOn and hrp and savedCFrame do
-                local targetPos = savedCFrame.Position + Vector3.new(0, 5, 0)
-                local dir = (targetPos - hrp.Position)
+                local dir = ((savedCFrame.Position + Vector3.new(0, 5, 0)) - hrp.Position)
                 if dir.Magnitude < 4 then break end
                 bv.Velocity = dir.Unit * 50
                 task.wait()
             end
             bv:Destroy()
-            if not noclipOn then
-                disableNoclip()
-            end
+            if not noclipOn then disableNoclip() end
             roubarOn = false
             toggleBtn.Text = "Roubar: OFF"
         end)
     else
-        if not noclipOn then
-            disableNoclip()
-        end
+        if not noclipOn then disableNoclip() end
     end
 end)
